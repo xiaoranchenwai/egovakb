@@ -1,0 +1,23 @@
+langchain_mcp_adapters
+langchain==0.3.23
+langchain_community==0.3.20
+langchain_core==0.3.75
+langchain_google_genai==2.1.2
+langchain_deepseek==0.1.4
+langchain_aws
+langchain_huggingface==0.1.2
+langchain_ollama==0.3.0
+langchain_text_splitters==0.3.8
+langgraph_checkpoint==2.0.24
+langgraph_prebuilt==0.1.8
+langgraph_sdk==0.1.61
+langchain_anthropic==0.3.19
+langchain-openai==0.3.28
+langgraph==0.3.27
+pymysql
+dmPython
+sqlalchemy
+openpyxl
+pandas
+apache-skywalking
+torch_npu==2.6.0; platform_machine == "aarch64"

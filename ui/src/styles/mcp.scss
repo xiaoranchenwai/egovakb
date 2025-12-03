@@ -1,0 +1,105 @@
+// 间距
+$spacing-xs: 4px;
+$spacing-sm: 8px;
+$spacing-md: 16px;
+$spacing-lg: 24px;
+$spacing-xl: 32px;
+
+// 间隙类
+.gap-1 {
+  gap: $spacing-xs;
+}
+.gap-2 {
+  gap: $spacing-sm;
+}
+.gap-3 {
+  gap: $spacing-md;
+}
+.gap-4 {
+  gap: $spacing-lg;
+}
+
+// margin工具类
+.mb-1 {
+  margin-bottom: $spacing-xs;
+}
+.mb-2 {
+  margin-bottom: $spacing-sm;
+}
+.mb-3 {
+  margin-bottom: $spacing-md;
+}
+// .mb-4 {
+//   margin-bottom: $spacing-lg;
+// }
+.mb-6 {
+  margin-bottom: $spacing-xl;
+}
+
+// 文本大小类
+$font-size-base: 14px;
+$font-size-sm: 12px;
+$font-size-lg: 16px;
+$font-size-xl: 20px;
+
+.text-sm {
+  font-size: $font-size-sm;
+}
+
+.text-base {
+  font-size: $font-size-base;
+}
+
+.text-lg {
+  font-size: $font-size-lg;
+}
+
+.text-xl {
+  font-size: $font-size-xl;
+}
+
+// 字重类
+.font-bold {
+  font-weight: 700;
+}
+
+.font-medium {
+  font-weight: 500;
+}
+
+.font-normal {
+  font-weight: 400;
+}
+
+// margin工具类
+.mb-1 {
+  margin-bottom: $spacing-xs;
+}
+.mb-2 {
+  margin-bottom: $spacing-sm;
+}
+.mb-3 {
+  margin-bottom: $spacing-md;
+}
+.mb-4 {
+  margin-bottom: $spacing-lg;
+}
+.mb-6 {
+  margin-bottom: $spacing-xl;
+}
+
+.mr-1 {
+  margin-right: $spacing-xs;
+}
+.mr-2 {
+  margin-right: $spacing-sm;
+}
+.mr-3 {
+  margin-right: $spacing-md;
+}
+.mr-4 {
+  margin-right: $spacing-lg;
+}
+.mr-6 {
+  margin-right: $spacing-xl;
+}

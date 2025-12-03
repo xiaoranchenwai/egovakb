@@ -1,0 +1,16 @@
+{
+  "files": [],
+  "exclude": ["src/components/markdown/assets/markdown-iconfont.js"],
+  "references": [
+    {
+      "path": "./tsconfig.node.json"
+    },
+    {
+      "path": "./tsconfig.app.json"
+    },
+    {
+      "path": "./tsconfig.vitest.json"
+    }
+  ]
+}
+

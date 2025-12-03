@@ -1,0 +1,230 @@
+{
+    "nodes": [
+        {
+            "id": "base-node",
+            "type": "base-node",
+            "x": 120,
+            "y": 120,
+            "properties": {
+                "config": {},
+                "height": 727.797,
+                "stepName": "基本信息",
+                "node_data": {
+                    "desc": "快速应用描述",
+                    "name": "快速应用",
+                    "prologue": "您好，我是快速应用小助手，您可以向我提出快速应用方面的问题。\n- 快速应用主要功能有什么？\n- 快速应用如何？\n- 需要转人工服务",
+                    "tts_type": "BROWSER"
+                },
+                "input_field_list": [],
+                "showNode": true,
+                "user_input_field_list": [],
+                "user_input_config": {
+                    "title": "用户输入"
+                },
+                "api_input_field_list": []
+            }
+        },
+        {
+            "id": "start-node",
+            "type": "start-node",
+            "x": 120,
+            "y": 785.8985,
+            "properties": {
+                "config": {
+                    "fields": [
+                        {
+                            "label": "用户问题",
+                            "value": "question"
+                        }
+                    ],
+                    "globalFields": [
+                        {
+                            "label": "当前时间",
+                            "value": "time"
+                        },
+                        {
+                            "label": "历史聊天记录",
+                            "value": "history_context"
+                        },
+                        {
+                            "label": "对话 ID",
+                            "value": "chat_id"
+                        }
+                    ]
+                },
+                "fields": [
+                    {
+                        "label": "用户问题",
+                        "value": "question"
+                    }
+                ],
+                "height": 364,
+                "stepName": "开始",
+                "globalFields": [
+                    {
+                        "label": "当前时间",
+                        "value": "time"
+                    }
+                ],
+                "showNode": true
+            }
+        },
+        {
+            "id": "b931efe5-5b66-46e0-ae3b-0160cb18eeb5",
+            "type": "search-dataset-node",
+            "x": 710,
+            "y": 789.8985,
+            "properties": {
+                "config": {
+                    "fields": [
+                        {
+                            "label": "检索结果的分段列表",
+                            "value": "paragraph_list"
+                        },
+                        {
+                            "label": "满足直接回答的分段列表",
+                            "value": "is_hit_handling_method_list"
+                        },
+                        {
+                            "label": "检索结果",
+                            "value": "data"
+                        },
+                        {
+                            "label": "满足直接回答的分段内容",
+                            "value": "directly_return"
+                        }
+                    ]
+                },
+                "height": 802,
+                "stepName": "知识库检索",
+                "node_data": {
+                    "dataset_id_list": [
+                        "4f38f37d-014a-11f0-b33d-f44efcd55971"
+                    ],
+                    "dataset_setting": {
+                        "top_n": 3,
+                        "similarity": 0.6,
+                        "search_mode": "embedding",
+                        "max_paragraph_char_number": 5000
+                    },
+                    "source_dataset_id_list": [],
+                    "question_reference_address": [
+                        "start-node",
+                        "question"
+                    ]
+                },
+                "showNode": true,
+                "condition": "AND"
+            }
+        },
+        {
+            "id": "f1f1ee18-5a02-46f6-b4e6-226253cdffbb",
+            "type": "ai-chat-node",
+            "x": 1170,
+            "y": 785.8985,
+            "properties": {
+                "config": {
+                    "fields": [
+                        {
+                            "label": "AI 回答内容",
+                            "value": "answer"
+                        },
+                        {
+                            "label": "思考过程",
+                            "value": "reasoning_content"
+                        }
+                    ]
+                },
+                "height": 940.797,
+                "stepName": "AI 对话",
+                "node_data": {
+                    "prompt": "已知信息：\n{{知识库检索.data}}\n问题：\n{{开始.question}}",
+                    "system": "",
+                    "model_id": "d8fe9de6-edba-11ef-baa0-3cecefab5b5c",
+                    "is_result": true,
+                    "dialogue_number": 0,
+                    "model_setting": {
+                        "reasoning_content_start": "<think>",
+                        "reasoning_content_end": "</think>",
+                        "reasoning_content_enable": true
+                    },
+                    "dialogue_type": "WORKFLOW"
+                },
+                "showNode": true,
+                "condition": "AND"
+            }
+        }
+    ],
+    "edges": [
+        {
+            "id": "7d0f166f-c472-41b2-b9a2-c294f4c83d73",
+            "type": "app-edge",
+            "sourceNodeId": "start-node",
+            "targetNodeId": "b931efe5-5b66-46e0-ae3b-0160cb18eeb5",
+            "startPoint": {
+                "x": 280,
+                "y": 785.8985
+            },
+            "endPoint": {
+                "x": 550,
+                "y": 789.8985
+            },
+            "properties": {},
+            "pointsList": [
+                {
+                    "x": 280,
+                    "y": 785.8985
+                },
+                {
+                    "x": 390,
+                    "y": 785.8985
+                },
+                {
+                    "x": 440,
+                    "y": 789.8985
+                },
+                {
+                    "x": 550,
+                    "y": 789.8985
+                }
+            ],
+            "sourceAnchorId": "start-node_right",
+            "targetAnchorId": "b931efe5-5b66-46e0-ae3b-0160cb18eeb5_left"
+        },
+        {
+            "id": "6e333fbb-37ba-4d45-9202-2eff7275b597",
+            "type": "app-edge",
+            "sourceNodeId": "b931efe5-5b66-46e0-ae3b-0160cb18eeb5",
+            "targetNodeId": "f1f1ee18-5a02-46f6-b4e6-226253cdffbb",
+            "startPoint": {
+                "x": 870,
+                "y": 789.8985
+            },
+            "endPoint": {
+                "x": 1010,
+                "y": 785.8985
+            },
+            "properties": {},
+            "pointsList": [
+                {
+                    "x": 870,
+                    "y": 789.8985
+                },
+                {
+                    "x": 980,
+                    "y": 789.8985
+                },
+                {
+                    "x": 900,
+                    "y": 785.8985
+                },
+                {
+                    "x": 1010,
+                    "y": 785.8985
+                }
+            ],
+            "sourceAnchorId": "b931efe5-5b66-46e0-ae3b-0160cb18eeb5_right",
+            "targetAnchorId": "f1f1ee18-5a02-46f6-b4e6-226253cdffbb_left"
+        }
+    ]
+}

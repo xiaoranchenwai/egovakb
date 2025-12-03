@@ -1,0 +1,32 @@
+FROM registry.fit2cloud.com/maxkb/maxkb:latest
+
+# 设置清华源
+RUN printf "deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ bionic main restricted universe multiverse\ndeb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ bionic-updates main restricted universe multiverse\ndeb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ bionic-backports main restricted universe multiverse\ndeb http://security.ubuntu.com/ubuntu/ bionic-security main restricted universe multiverse" > /etc/apt/sources.list && \
+    chmod -R 777 /tmp && \
+    apt-key adv --keyserver keyserver.ubuntu.com --recv 3B4FE6ACC0B21F32 && \
+    apt update && \
+    apt install unzip -y
+
+# 处理应用目录
+RUN if [ -d "/opt/maxkb/app" ]; then mv /opt/maxkb/app /opt/maxkb/app_bak; fi
+RUN mkdir -p /opt/maxkb/app
+COPY . /opt/maxkb/app/
+
+# 安全处理sandbox用户和目录权限
+RUN mkdir -p /opt/maxkb/app/sandbox/ && \
+    if id -u sandbox >/dev/null 2>&1; then \
+        chown -R sandbox:$(id -gn sandbox) /opt/maxkb/app/sandbox/; \
+    else \
+        groupadd -r sandbox && \
+        useradd -r -g sandbox -d /opt/maxkb/app/sandbox sandbox && \
+        chown -R sandbox:sandbox /opt/maxkb/app/sandbox/; \
+    fi
+
+# 安装Python依赖
+RUN pip install -r /opt/maxkb/app/requirements.txt -i https://mirrors.aliyun.com/pypi/simple --isolated && \
+    pip install pydantic -U -i https://mirrors.aliyun.com/pypi/simple --isolated
+
+EXPOSE 8080
+
+ENTRYPOINT ["bash", "-c"]
+CMD ["/usr/bin/run-maxkb.sh"]
