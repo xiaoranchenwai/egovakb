@@ -41,6 +41,35 @@ docker run -d --name=maxkb --restart=always -p 8080:8080 -v C:/maxkb:/var/lib/po
 - MaxKB 产品版本分为社区版和专业版，详情请参见：[MaxKB 产品版本对比](https://maxkb.cn/pricing.html)；
 - 如果您需要向团队介绍 MaxKB，可以使用这个 [官方 PPT 材料](https://maxkb.cn/download/introduce-maxkb_202503.pdf)。
 
+## 本地开发（后端与前端）
+
+后端（Django）
+
+```bash
+# 安装依赖
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+
+# 启动接口服务（默认 http://localhost:8080）
+python main.py dev web
+
+# 可选：启动 Celery 异步任务
+python main.py dev celery
+```
+
+前端（Vite + Vue）
+
+```bash
+cd ui
+npm install
+
+# 将开发代理指向本地后端
+export VITE_BACKEND_TARGET=http://localhost:8080
+
+# 启动前端开发服务（默认 http://localhost:4173）
+npm run dev -- --host 0.0.0.0 --port 4173
+```
+
 如你有更多问题，可以查看使用手册，或者通过论坛与我们交流。
 
 - [案例展示](USE-CASES.md)

@@ -28,7 +28,8 @@ function loadAppConfig() {
   // 默认配置
   return {
     VITE_STATIC_PATH: '/ui/',
-    VITE_API_PATH: ''
+    VITE_API_PATH: '',
+    VITE_BACKEND_TARGET: 'http://localhost:8080'
   }
 }
 
@@ -40,33 +41,36 @@ const envDir = './env'
 export default defineConfig(({ mode }) => {
   const ENV = loadEnv(mode, envDir)
   const prefix = process.env.VITE_DYNAMIC_PREFIX || config.VITE_STATIC_PATH || '/'
+  const backendTarget =
+    ENV.VITE_BACKEND_TARGET || config.VITE_BACKEND_TARGET || 'http://localhost:8080'
+  const devServerPort = Number(ENV.VITE_APP_PORT) || 4173
   console.log('prefix', prefix)
   const proxyConf: Record<string, string | ProxyOptions> = {}
   
   // API proxy configuration
   proxyConf['/api'] = {
-    target: 'http://10.4.1.132:8080',
+    target: backendTarget,
     changeOrigin: true,
     rewrite: (path) => path.replace(/^\/api/, config.VITE_API_PATH + '/api')
   }
-  
+
   // Backend API proxy configuration - 直接代理完整的后端API路径
   proxyConf[config.VITE_API_PATH + '/api'] = {
-    target: 'http://10.4.1.132:8080',
+    target: backendTarget,
     changeOrigin: true,
     rewrite: (path) => path.replace(new RegExp(`^${config.VITE_API_PATH.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`), '')
   }
-  
+
   // Document proxy configuration
   proxyConf['/doc'] = {
-    target: 'http://10.4.1.132:8080',
+    target: backendTarget,
     changeOrigin: true,
     rewrite: (path) => path.replace(/^\/doc/, config.VITE_STATIC_PATH + '/doc')
   }
-  
+
   // Static files proxy configuration
   proxyConf['/static'] = {
-    target: 'http://10.4.1.132:8080',
+    target: backendTarget,
     changeOrigin: true,
     rewrite: (path) => path.replace(/^\/static/, config.VITE_STATIC_PATH + '/static')
   }
@@ -79,7 +83,7 @@ export default defineConfig(({ mode }) => {
     server: {
       cors: true,
       host: '0.0.0.0',
-      port: Number(ENV.VITE_APP_PORT),
+      port: devServerPort,
       strictPort: true,
       proxy: proxyConf
     },

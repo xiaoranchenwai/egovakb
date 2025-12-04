@@ -34,6 +34,35 @@ Access MaxKB web interface at `http://your_server_ip:8080` with default admin cr
 
 中国用户如遇到 Docker 镜像 Pull 失败问题，请参照该 [离线安装文档](https://maxkb.cn/docs/installation/offline_installtion/) 进行安装。
 
+## Local development (backend & frontend)
+
+Backend (Django)
+
+```bash
+# Install dependencies
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+
+# Start the API service on http://localhost:8080
+python main.py dev web
+
+# Optional: start background tasks (Celery workers)
+python main.py dev celery
+```
+
+Frontend (Vite + Vue)
+
+```bash
+cd ui
+npm install
+
+# Point the dev server proxy to your backend
+export VITE_BACKEND_TARGET=http://localhost:8080
+
+# Start the dev server (defaults to http://localhost:4173)
+npm run dev -- --host 0.0.0.0 --port 4173
+```
+
 ## Screenshots
 
 <table style="border-collapse: collapse; border: 1px solid black;">
