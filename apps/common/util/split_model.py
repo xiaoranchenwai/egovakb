@@ -3,27 +3,29 @@
 LangChain driven text splitter utilities.
 
 This module keeps the original ``SplitModel`` entrypoint used across the
-project, but replaces the hand-written regex parsing logic with LangChain
-splitters.  It provides:
+project, but replaces all regex-based hierarchical parsing with LangChain
+splitters. The new behavior provides:
 
-* Markdown-aware splitting to preserve parent/child heading structure.
-* Overlapping character windows for downstream recall.
-* Optional filtering to normalize whitespace in the final chunks.
+* Markdown-aware hierarchical splitting (preserving titles).
+* Overlapping chunk windows for recall.
+* Optional whitespace normalization.
 """
 
 from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import List, Sequence
+from typing import List, Sequence, Union
 
 from langchain_text_splitters import (
     MarkdownHeaderTextSplitter,
     RecursiveCharacterTextSplitter,
 )
 
-# Default markdown headers used when callers provide a ``pattern_list``
-# (maintains compatibility with previous markdown oriented behaviour).
+# ─────────────────────────────────────────────────────────────────────────────
+# Markdown heading definitions
+# ─────────────────────────────────────────────────────────────────────────────
+
 DEFAULT_HEADERS_TO_SPLIT = [
     ("#", "h1"),
     ("##", "h2"),
@@ -33,10 +35,14 @@ DEFAULT_HEADERS_TO_SPLIT = [
     ("######", "h6"),
 ]
 
+MAX_TITLE_LEN = 256
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Helpers
+# ─────────────────────────────────────────────────────────────────────────────
 
 def _normalize_text(text: str) -> str:
-    """Lightweight cleanup to collapse noisy whitespace characters."""
-
+    """Collapse excessive whitespace and normalize newlines."""
     replace_map = {
         re.compile("\r"): "\n",
         re.compile("\t+"): " ",
@@ -47,17 +53,39 @@ def _normalize_text(text: str) -> str:
         text = re.sub(pattern, repl, text)
     return text.strip()
 
+def _trim_title(title: str) -> str:
+    """Normalize and clamp markdown titles to the API's length limit."""
+
+    normalized = _normalize_text(title)
+    return normalized[:MAX_TITLE_LEN]
+
+
+def flat_map(arr):
+    """Compatibility shim: flatten 2D lists."""
+    result = []
+    for e in arr:
+        result.extend(e)
+    return result
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SplitModel definition
+# ─────────────────────────────────────────────────────────────────────────────
 
 @dataclass
 class SplitModel:
-    """LangChain based splitter wrapper.
+    """
+    Unified LangChain-based splitter.
 
     Args:
-        content_level_pattern: Presence of a value triggers markdown header
-            splitting so we maintain hierarchical context (parent/child blocks).
-        with_filter: Whether to normalize whitespace in the returned chunks.
-        limit: Maximum character length for each chunk.
-        overlap: Character overlap between adjacent chunks to preserve context.
+        content_level_pattern:
+            If provided, enable Markdown header splitting (hierarchical).
+        with_filter:
+            Normalize output text chunks if True.
+        limit:
+            Maximum chunk length.
+        overlap:
+            Overlap for RecursiveCharacterTextSplitter.
     """
 
     content_level_pattern: Sequence | None
@@ -65,29 +93,38 @@ class SplitModel:
     limit: int = 4096
     overlap: int | None = None
 
+    # ------------------------------------------------------------------
+
     def __post_init__(self):
-        if self.limit is None or self.limit <= 0:
+        """Ensure chunk size & overlap are valid."""
+        if not self.limit or self.limit <= 0:
             self.limit = 4096
-        # Cap overly large limits to avoid huge chunks.
-        self.limit = min(self.limit, 100_000)
-        # Default overlap keeps ~20% of content for context.
+        self.limit = min(self.limit, 100000)
+
+        # default ~20% overlap
         self.overlap = (
             self.overlap
             if self.overlap is not None
             else max(1, min(200, int(self.limit * 0.2)))
         )
 
+    # ------------------------------------------------------------------
+
     def _build_splitter(self) -> RecursiveCharacterTextSplitter:
+        """Create the chunk splitter."""
         return RecursiveCharacterTextSplitter(
             chunk_size=self.limit,
             chunk_overlap=self.overlap,
             separators=["\n\n", "\n", "。", ".", "?", "!", "；", ";", " "],
         )
 
+    # ------------------------------------------------------------------
+
     def _split_markdown(self, text: str) -> List[dict]:
         """
-        First split by markdown headers (parent nodes), then split children with
-        overlapping windows so child retrieval can surface parent content.
+        First split by markdown headers -> parent documents.
+        Then split each parent document using recursive splitter
+        to generate child chunks with inherited titles.
         """
 
         header_splitter = MarkdownHeaderTextSplitter(
@@ -95,38 +132,51 @@ class SplitModel:
             strip_headers=False,
         )
         header_docs = header_splitter.split_text(text)
+
         splitter = self._build_splitter()
         child_docs = splitter.split_documents(header_docs)
 
         results = []
         for doc in child_docs:
-            metadata_headers = [
-                value for key, value in doc.metadata.items() if key.startswith("h")
+            # Merge all markdown headings in metadata
+            titles = [
+                value for key, value in doc.metadata.items()
+                if key.startswith("h")
             ]
-            title = " ".join(metadata_headers)
+            title = _trim_title(" ".join(titles)) if titles else ""
+            #title = _trim_title(" ".join(title))
+
             content = doc.page_content
             if self.with_filter:
                 content = _normalize_text(content)
-            results.append({"title": title, "content": content})
-        return [item for item in results if item.get("content")]
+
+            if content:
+                results.append({
+                    "title": title,
+                    "content": content
+                })
+
+        return results
+
+    # ------------------------------------------------------------------
 
     def _split_plain(self, text: str) -> List[dict]:
+        """Non-markdown plain text splitting."""
         splitter = self._build_splitter()
         parts = splitter.split_text(text)
+
         results = []
         for part in parts:
             content = _normalize_text(part) if self.with_filter else part
             if content:
                 results.append({"title": "", "content": content})
+
         return results
 
-    def parse(self, text: str | bytes) -> List[dict]:
-        """Split input text into chunks.
+    # ------------------------------------------------------------------
 
-        Returns a list of dictionaries with ``title`` and ``content`` keys to
-        stay compatible with previous consumers.
-        """
-
+    def parse(self, text: Union[str, bytes]) -> List[dict]:
+        """Entrypoint for all consumers. Returns a list of chunks."""
         if isinstance(text, (bytes, bytearray)):
             text = text.decode(errors="ignore")
 
@@ -134,16 +184,24 @@ class SplitModel:
 
         if self.content_level_pattern:
             return self._split_markdown(text)
+
         return self._split_plain(text)
 
 
-def get_split_model(filename: str, with_filter: bool = False, limit: int = 100000):
-    """Factory to create a ``SplitModel`` for a given filename."""
+# ─────────────────────────────────────────────────────────────────────────────
+# Factory
+# ─────────────────────────────────────────────────────────────────────────────
 
-    use_markdown = filename.endswith(".md") or filename.endswith(".MD")
+def get_split_model(filename: str, with_filter: bool = False, limit: int = 100000):
+    """Return an appropriate SplitModel based on filename."""
+    is_md = filename.lower().endswith(".md")
     return SplitModel(
-        content_level_pattern=DEFAULT_HEADERS_TO_SPLIT if use_markdown else None,
+        content_level_pattern=DEFAULT_HEADERS_TO_SPLIT if is_md else None,
         with_filter=with_filter,
         limit=limit,
     )
 
+
+# ─────────────────────────────────────────────────────────────────────────────
+
+__all__ = ["SplitModel", "get_split_model", "flat_map"]
